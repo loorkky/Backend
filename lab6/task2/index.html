@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes App</title>
+</head>
+<body>
+<h1>Notes App</h1>
+
+<form id="noteForm">
+  <input type="text" id="noteTitle" placeholder="Заголовок" required>
+  <textarea id="noteContent" placeholder="Текст замітки" required></textarea>
+  <button type="submit">Додати замітку</button>
+</form>
+
+<div id="notesList"></div>
+
+<script>
+  const noteForm = document.getElementById('noteForm');
+  const notesList = document.getElementById('notesList');
+
+  noteForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const title = document.getElementById('noteTitle').value;
+    const content = document.getElementById('noteContent').value;
+
+    fetch('add_note.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title, content }),
+    })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                alert('Замітка додана успішно');
+                noteForm.reset();
+                fetchNotes();
+              } else {
+                alert(data.message);
+              }
+            })
+            .catch(error => console.error('Помилка:', error));
+  });
+
+  function fetchNotes() {
+    fetch('get_notes.php')
+            .then(response => response.json())
+            .then(notes => {
+              notesList.innerHTML = '';
+              notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.innerHTML = `
+                        <h3>${note.title}</h3>
+                        <p>${note.content}</p>
+                        <button onclick="updateNote(${note.id})">Оновити</button>
+                        <button onclick="deleteNote(${note.id})">Видалити</button>
+                    `;
+                notesList.appendChild(noteElement);
+              });
+            })
+            .catch(error => console.error('Помилка:', error));
+  }
+
+  function updateNote(id) {
+    const newTitle = prompt('Введіть новий заголовок:');
+    const newContent = prompt('Введіть новий текст:');
+
+    fetch('update_note.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, title: newTitle, content: newContent }),
+    })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                alert('Замітка оновлена успішно');
+                fetchNotes();
+              } else {
+                alert('Помилка при оновленні замітки');
+              }
+            })
+            .catch(error => console.error('Помилка:', error));
+  }
+
+  function deleteNote(id) {
+    if (confirm('Ви впевнені, що хочете видалити цю замітку?')) {
+      fetch('delete_note.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success') {
+                  alert('Замітка видалена успішно');
+                  fetchNotes();
+                } else {
+                  alert('Помилка при видаленні замітки');
+                }
+              })
+              .catch(error => console.error('Помилка:', error));
+    }
+  }
+
+  fetchNotes();
+</script>
+</body>
+</html>

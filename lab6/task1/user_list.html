@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User List</title>
+</head>
+<body>
+<h2>User List</h2>
+<button id="getUserList">Get User List</button>
+<ul id="userList"></ul>
+
+<h2>Edit User</h2>
+<form id="editUserForm">
+    <label for="editEmail">Email:</label>
+    <input type="email" id="editEmail" name="email" required><br><br>
+
+    <label for="editName">New Name:</label>
+    <input type="text" id="editName" name="name" required><br><br>
+
+    <label for="editPassword">New Password:</label>
+    <input type="password" id="editPassword" name="password" required><br><br>
+
+    <button type="submit">Edit User</button>
+</form>
+
+<div id="editMessage"></div>
+
+<h2>Delete User</h2>
+<form id="deleteUserForm">
+    <label for="deleteEmail">Email:</label>
+    <input type="email" id="deleteEmail" name="email" required><br><br>
+
+    <button type="submit">Delete User</button>
+</form>
+
+<div id="deleteMessage"></div>
+
+<script>
+    document.getElementById('getUserList').addEventListener('click', function() {
+        fetch('get_users.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                let userList = document.getElementById('userList');
+                userList.innerHTML = '';
+                data.forEach(user => {
+                    let li = document.createElement('li');
+                    li.textContent = `${user.name} - ${user.email}`;
+                    userList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    });
+
+    document.getElementById('editUserForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        let formData = {
+            email: document.getElementById('editEmail').value,
+            name: document.getElementById('editName').value,
+            password: document.getElementById('editPassword').value
+        };
+
+        fetch('edit_user.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editMessage').textContent = data.message;
+                if (data.success) {
+                    document.getElementById('editUserForm').reset();
+                    document.getElementById('getUserList').click();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    });
+
+    document.getElementById('deleteUserForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        let formData = {
+            email: document.getElementById('deleteEmail').value
+        };
+
+        fetch('delete_user.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('deleteMessage').textContent = data.message;
+                if (data.success) {
+                    document.getElementById('deleteUserForm').reset();
+                    document.getElementById('getUserList').click();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    });
+</script>
+
+<button id="logout">Logout</button>
+<script>
+    document.getElementById('logout').addEventListener('click', function() {
+        fetch('logout.php')
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                window.location.href = 'index.html';
+            })
+            .catch(error => console.error('Error:', error));
+    });
+</script>
+
+</body>
+</html>
